@@ -569,5 +569,98 @@ while(true)
 
 应付断点：Debug会暂停游戏循环，但是时间依然前进，这样会导致巨大的增量时间，而如果这些时间被错误地传入了子系统中很可能导致整个游戏等的崩溃；解决策略：当量度到某帧的持续时间超过预设的时间，就假设游戏刚从断点中回复，人工地将增量时间设定为1/30s等而避免出现一个巨大的帧时间尖峰
 
+简单的时钟类：通常含有一个变量，用来记录自时钟创建以来经过的绝对时间，一般选择以机器周期为单位的64位无符号整数最简单与方便
 
+```cpp
+typedef int64_t U64;
+typedef float F32;
 
+class Clock
+{
+    U64 m_timeCycles;
+    F32 m_timeScale;
+    bool m_isPaused;
+    static F32 s_cyclesPerSecond;
+
+    static inline U64 secondsToCycles(F32 timeSeconds)
+    {
+        return (U64)(timeSeconds * s_cyclesPerSecond);
+    }
+
+    static inline F32 cyclesToSeconds(U64 timeCycles)
+    {
+        return (F32)(timeCycles / s_cyclesPerSecond);
+    }
+
+public:
+    static void init()
+    {
+        s_cyclesPerSecond = (F32)readHiResTimerFrequency();
+    }
+
+    explicit Clock(F32 startTimeSeconds = 0.0f) :
+        m_timeCycles(secondsToCycles(startTimeSeconds)),
+        m_timeScale(1.0f),
+        m_isPaused(false)
+    {}
+
+    U64 getTimeCycles() const
+    {
+        return m_timeCycles;
+    }
+
+    F32 calcDeltaSecond(const Clock& other)
+    {
+        U64 dt = m_timeCycles - other.m_timeCycles;
+        return cyclesToSeconds(dt);
+    }
+
+    void update(F32 dtRealSeconds)
+    {
+        if(!m_isPaused)
+        {
+            U64 dtScaledCycles = secondsToCycles(dtRealSeconds * m_timeCycles);
+            m_timeCycles += dtScaledCycles;
+        }
+    }
+
+    void setPaused(bool isPaused)
+    {
+        m_isPaused = isPaused;
+    }
+
+    bool isPaused() const
+    {
+        return m_isPaused;
+    }
+
+    void setTimeScale(F32 scale)
+    {
+        m_timeCycles = scale;
+    }
+
+    F32 getTimeScale() const
+    {
+        return m_timeCycles;
+    }
+
+    void singleStep()
+    {
+        if(m_isPaused)
+        {
+            U64 dtScaledCycles = secondsToCycles((1.0f / 30.0f) * m_timeCycles);
+            m_timeCycles += dtScaledCycles;
+        }
+    }
+};
+```
+
+多处理器的游戏循环：
+* 分叉与汇合：把一个单位的工作分割成更小的子单位，再把这些工作量分配到多个核或者硬件线程之中（分叉），最后待所有工作完成后再合并结果（汇合）
+* 每个子系统运行与独立线程：主控线程负责控制与同步这些子系统的次级子系统，并应付游戏的大部分高级逻辑（游戏主循环），子系统去重复执行那些比较有隔离性的功能，比如渲染引擎，物理模拟，动画管道，音频引擎等等
+
+异步程序设计（为了多处理器的硬件而写的代码）：当操作请求发出之后，通常不会马上得到结果，很可能是在某帧的开始启动请求，下一帧才能够提取结果。调用的函数只会建立一个作业并把它加到队列之中，然后主线程看情况调用空闲的CPU或者核去处理这个作业
+
+网络多人游戏循环：
+* 主从式模式：大部分游戏逻辑运行中服务器上，客户端只是做渲染工作（单机游戏可以看成一个客户端且服务器与客户端运行在同一机器上）两者的代码可以以不同的频率循环
+* 点对点模式：每一部机器既有服务器的特性，也有客户端的特性，机器对拥有管辖权的对象就像服务器，对无管辖权的对象就像客户端
