@@ -112,7 +112,7 @@ int &ref3 = ref1 * 2;//ERROR: Non-const lvalue reference to type 'int' cannot bi
 const int temp = dval;//double dval = 3.14;也就是这句话进行类型转换
 const int &ref = temp;//绑定的是temp，不是dval
 ```
-**把`*`放在`const`之前与之后的区别：**放在后面是底层const，放在前面是顶层const
+**把`*`放在`const`之前与之后的区别**:放在后面是底层const，放在前面是顶层const
 
 ```cpp
 int errNum = 0;
