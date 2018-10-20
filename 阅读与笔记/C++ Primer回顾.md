@@ -40,6 +40,7 @@ int c(pi),d = pi;   //正确执行且的确丢失了部分信息
 
 <h3>引用：</h3>
 左值引用：为对象起另外一个名字（就是起一个别名），引用必须初始化，这个过程中引用的值会与原来的值**绑定**，而且无法令引用重新绑定到另一个对象；此外，引用不是对象，不能构建引用的引用（这部分内容的例外可以参考引用折叠，可以间接构建起引用的引用，前提必须是类型别名或者模板参数，见P608~612；此外，**You are forbidden from declaring references to references, but compilers may produce them inparticular contexts.**）
+
 ```cpp
 int ival = 1024;
 int &refval = ival;
@@ -53,6 +54,7 @@ int &refval;    //ERROR
 
 <h3>指针：</h3>
 引用不是对象，没有实际地址，所以不能定义指向引用的指针：`int &*p`这种，但是*指向指针的引用存在*，因为指针是对象（离变量名最近的符号对变量类型有最直接的影响（下文ptr1为符号&，因此ptr1是一个引用，其余部分确定引用的是什么））
+
 ```cpp
     int iVal=1024;
     int &refVal=iVal;
@@ -65,7 +67,8 @@ int &refval;    //ERROR
 
 <h3>空指针：</h3>
 **C++11**：`nullptr`:特殊类型的字面值，可以被转化为任意其他的指针类型，这一点与传统的`NULL`不同，C++中，NULL被定义成0，显然这样会在某些情况下发生到底是普通整数还是指针的模糊，所以现在需要尽可能使用nullptr，抛弃NULL<br>
-比较`nullptr`、`NULL`区别:万一有重载或者模板推导的时候，使用NULL编译器就无法给出正确结果了，比如：
+比较`nullptr`、`NULL`区别:万一有重载或者模板推导的时候，使用NULL编译器就无法给出正确结果了，比如
+
 ```cpp
 void f(void *){}
 void f(int){}
@@ -77,9 +80,10 @@ int main()
 而且用nullptr可以更好地进行异常的捕获与处理
 
 <h3>const问题：</h3>
-默认情况下，const对象设定为仅在文件内有效，当多个文件中出现了同名const变量，等同于不同文件中分别定义了独立的变量（编译时就直接发生替换）当真的需要跨文件进行使用共享，就把这个变量无论定义还是声明都加上`extern`，如`extern const int bufSize = 10;//a.c``extern const int bufSize;//a.h`，那么这两个变量就是一个
+默认情况下，const对象设定为仅在文件内有效，当多个文件中出现了同名const变量，等同于不同文件中分别定义了独立的变量（编译时就直接发生替换）当真的需要跨文件进行使用共享，就把这个变量无论定义还是声明都加上`extern`，如`extern const int bufSize = 10;//a.c``extern const int bufSize;//a.h`，那么这两个变量就是一个
 
-可以把引用绑定到const对象上，但是要对这个引用也要有修饰词`const`，不然就可以通过这个引用修改`const`的值，这样显然是不合理的，但是`const`的引用可以绑定非`const`的对象：
+可以把引用绑定到const对象上，但是要对这个引用也要有修饰词`const`，不然就可以通过这个引用修改`const`的值，这样显然是不合理的，但是`const`的引用可以绑定非`const`的对象
+
 ```cpp
 const int iVal = 1024;
 const int &ref1 = iVal;
@@ -91,19 +95,22 @@ const int &ref3 = i;//Correct
 * 但是如果你是想让这个别名只读，那随便你，而且这个别名也不会影响原来数的const与否
 */
 ```
-需要理解的一个ERROR：
+需要理解的一个ERROR
+
 ```cpp
 int iVal = 1024;
 const int &ref1 = iVal;
 const int &ref2 = ref1 * 2;
 int &ref3 = ref1 * 2;//ERROR: Non-const lvalue reference to type 'int' cannot bind to a temporary of type 'int'
 ```
-因为当const的引用`const int &ref = dval`编译器会进行这样的操作，也就是ref绑定了一个临时量而不是dval，那么当ref不是const时，只能改变绑定的temp的值，而对dval无能为力，这是不符合逻辑的，所以将其定义为非法
+因为当const的引用`const int &ref = dval`编译器会进行这样的操作，也就是ref绑定了一个临时量而不是dval，那么当ref不是const时，只能改变绑定的temp的值，而对dval无能为力，这是不符合逻辑的，所以将其定义为非法
+
 ```cpp
-const int temp = dval;//double dval = 3.14;也就是这句话进行类型转换
+const int temp = dval;//double dval = 3.14;也就是这句话进行类型转换
 const int &ref = temp;//绑定的是temp，不是dval
 ```
 **把`*`放在`const`之前与之后的区别：**放在后面是底层const，放在前面是顶层const
+
 ```cpp
 int errNum = 0;
 const int *curErr0 = &errNum;   //不能通过curErr0修改errNum的值，这是一个底层const (*curErr0)++;//ERROR
@@ -130,20 +137,20 @@ int main()
 
 <h3>处理类型</h3>
 
-类型别名：
+类型别名：
 传统：`typedef` 
 **C++11：** 使用“别名声明”(alias declaration)`using SI = Sales_item;`，正常使用区别不大，优势主要在模板别名等上面，具体可见蓝色大大的专栏 https://zhuanlan.zhihu.com/p/21264013 在支持C++11上推荐`using`代替传统的`typedef`<br>
-**警告：使用类型别名的语句，尝试把类型别名简单替换进行理解的方法是错误的！**
+**警告：使用类型别名的语句，尝试把类型别名简单替换进行理解的方法是错误的！**
 ```cpp
 //下面是上面typedef简单展开，但是这两者的语意是完全不同的
 typedef char *pstring;
 const pstring cstr = 0; //基本数据类型是指针，指向char的常量指针，即这个cstr的值不能改变 (*cstr)++;执行没有问题。
 //静态检查出现如下提示：Clang-Tidy: 'cstr' declared with a const-qualified typedef type; results in the type being 'char *const' instead of 'const char *'
 
-const char *cstr1 = 0;  //基本数据类型是char，cstr所指的位置的值不能改变， (*cstr1)++;报错
+const char *cstr1 = 0;  //基本数据类型是char，cstr所指的位置的值不能改变， (*cstr1)++;报错
 ```
 
-**C++11**： `auto`自动类型推导，对const忽略顶层，保留底层const
+**C++11**： `auto`自动类型推导，对const忽略顶层，保留底层const
 ```cpp
 int i = 0;
 const int ci = i, &cr = ci;
@@ -152,10 +159,10 @@ auto d = &ci;           //指向整数常量的指针，auto推导得到const in
 
 const auto f = ci;      //若要保留顶层const，需要自己手动添加
 
-//符号&和*只是辅助auto推导得到你想要的类型，只从属于某个声明符而非基本数据类型的一部分，auto那部分必须一行是同一个类型
+//符号&和*只是辅助auto推导得到你想要的类型，只从属于某个声明符而非基本数据类型的一部分，auto那部分必须一行是同一个类型
 auto &g = ci;           //可以将引用类型设为auto，这样初始值中的顶层const会保留，此处g推导出来为const int &
 auto &h = 42;           //ERROR: 42是一个int，推导得到h为int &，显然可以想到不可能有 non-const reference bind the literal type，否则就可以通过h这个别名篡改42这个常量，改成const auto &j = 42;就对了
 auto &n = i, *p2 = &ci; //ERROR: 前者推导得到类型是int，后者得到const int，不一致
 ```
 
-**C++11**：`decltype`
+**C++11**：`decltype`
