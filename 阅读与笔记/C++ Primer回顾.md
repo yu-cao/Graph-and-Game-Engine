@@ -166,6 +166,7 @@ const auto f = ci;      //若要保留顶层const，需要自己手动添加
 auto &g = ci;           //可以将引用类型设为auto，这样初始值中的顶层const会保留，此处g推导出来为const int &
 auto &h = 42;           //ERROR: 42是一个int，推导得到h为int &，显然可以想到不可能有 non-const reference bind the literal type，否则就可以通过h这个别名篡改42这个常量，改成const auto &j = 42;就对了
 auto &n = i, *p2 = &ci; //ERROR: 前者推导得到类型是int，后者得到const int，不一致
+
 ```
 **C++11**：`decltype关键词` 从表达式的类型推导出要定义的变量的类型，但不要进行初始化，对表达式不会进行计算。在用`decltype`进行推导时，是自动完全copy整个推导出来的类型（包括顶、底层const，引用等）
 
