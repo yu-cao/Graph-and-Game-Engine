@@ -168,4 +168,32 @@ auto &h = 42;           //ERROR: 42是一个int，推导得到h为int &，显然
 auto &n = i, *p2 = &ci; //ERROR: 前者推导得到类型是int，后者得到const int，不一致
 ```
 
-**C++11**：`decltype`
+**C++11**：`decltype关键词` 从表达式的类型推导出要定义的变量的类型，但不要进行初始化，对表达式不会进行计算。在用`decltype`进行推导时，是自动完全copy整个推导出来的类型（包括顶、底层const，引用等）
+
+此外，引用在这里不是所指的对象的同义词（尽管在其他C++的地方都是如此）
+```cpp
+int i = 42, *p = &i, &r = i;
+decltype(r + 0) b;  //正确，加法的结果是int，就推导出int
+decltype(*p) c;     //ERROR: Declaration of reference variable 'c' requires an initializer
+```
+**这里\*是指针解引用的操作，那么解出来的就是一个引用&，所以`decltype`推导出来的结果是int&**<br>
+此外，**`decltype`的括号一个与两个是完全不同的，**`decltype((variable))`得到的永远是引用，而`decltype(variable)`的结果只有当variable本身是引用才是引用
+
+<h3>自定义数据结构</h3>
+
+**C++11**可以为类的数据成员提供一个**类内初始值**用以初始化数据成员
+```cpp
+struct Sales_data
+{
+    std::string bookNo;     //空字符串
+    unsigned units_sold = 0;//初始化为0
+};
+```
+编写自己的头文件，类、const、constexpr变量应该包含在头文件中，而且类所在的头文件名字应该与类名相同以区分
+```cpp
+//不要偷懒，头文件都加上头文件保护符以避免反复包含
+#ifndef XXX_H
+#define XXX_H
+...
+#endif
+```
