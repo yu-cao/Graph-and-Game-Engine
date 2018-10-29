@@ -142,7 +142,13 @@ int main()
 
 类型别名：
 传统：`typedef` 
-**C++11：** 使用“别名声明”(alias declaration)`using SI = Sales_item;`，正常使用区别不大，优势主要在模板别名等上面，具体可见蓝色大大的专栏 https://zhuanlan.zhihu.com/p/21264013 在支持C++11上推荐`using`代替传统的`typedef`<br>
+**C++11：** 使用“别名声明”(alias declaration)`using SI = Sales_item;`，正常使用区别不大，优势主要在模板别名等上面，此外能够很好提升程序可读性，具体可见蓝色大大的专栏 https://zhuanlan.zhihu.com/p/21264013 在支持C++11上推荐`using`代替传统的`typedef`<br>
+```cpp
+//可读性提升，讲int[4]重命名成为int_array
+using int_array = int[4];
+typedef int int_array[4];
+```
+
 **警告：使用类型别名的语句，尝试把类型别名简单替换进行理解的方法是错误的！**
 ```cpp
 //下面是上面typedef简单展开，但是这两者的语意是完全不同的
