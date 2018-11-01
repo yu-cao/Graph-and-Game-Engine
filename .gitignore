@@ -1,4 +1,7 @@
+#platform and IDE
 .DS_Store
+.idea
+cmake-build-debug
 
 # Prerequisites
 *.d

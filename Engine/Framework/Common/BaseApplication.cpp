@@ -3,9 +3,9 @@
 // Parse command line, read configuration, initialize all sub modules
 int My::BaseApplication::Initialize()
 {
-        m_bQuit = false;
+    m_bQuit = false;
 
-        return 0;
+    return 0;
 }
 
 
@@ -22,5 +22,5 @@ void My::BaseApplication::Tick()
 
 bool My::BaseApplication::IsQuit()
 {
-        return m_bQuit;
+    return m_bQuit;
 }
