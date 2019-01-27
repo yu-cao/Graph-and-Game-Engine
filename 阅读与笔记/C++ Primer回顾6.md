@@ -199,3 +199,54 @@ auto pos = name.find_first_of(numbers);//返回为1，即name中第一个数字�
 string dept("03714p3");
 auto pos = dept.find_first_not_of(numbers);//返回5，即'p'，它是第一个不与numbers中任何元素匹配的
 ```
+
+比较：
+
+|s.compare参数类型|作用|
+|:-:|:-:|
+|s2|比较s1和s2|
+|pos1,n1,s1|从s[pos1]开始的n1个字符与s2比较|
+|pos1,n1,s2,pos2,n2|从s[pos1]开始的n1个字符与s2[pos2]开始的n2个字符进行比较|
+|cp|比较s与cp指向的以\0结尾的字符数组|
+|pos1,n1,cp|从s[pos1]开始的n1个字符与cp指向的以\0结尾的字符数组比较|
+|pos1,n1,cp,n2|从s[pos1]开始的n1个字符与cp指向的字符数组的n2个字符比较|
+
+数值与字符转换：
+
+to_string(val)和stoX(s,p,b)（X可以是i，l，ul，ll，ull，f，d，ld等，p为保存s中第一个非数值字符的下标，默认为0，即不保存下标；b为base，浮点数不可选，默认是10）
+
+```cpp
+string s2 = "pi = 3.14";
+double d = stod(s2.substr(s2.find_first_of("+-.0123456789)));//d = 3.14
+```
+
+容器适配器：栈适配器、队列适配器、优先队列适配器。
+
+栈适配器：默认基于deque，但也可以基于list和vector实现
+
+```cpp
+//除了演示的3种外，还有s.emplace(args)这种
+int main()
+{
+    stack<int> intStack;
+
+    for(size_t ix = 0;ix!=10;++ix)
+        intStack.push(ix);
+    while(!intStack.empty())
+    {
+        int value = intStack.top();
+        intStack.pop();
+    }
+}
+```
+
+队列适配器：queue提供FIFO的存储与访问策略，默认基于deque实现，也可基于list实现；priority\_queue允许为队列中元素建立优先级，默认基于vector实现，也可基于deque实现
+
+|操作|意义|
+|:-:|:-:|
+|q.pop()|移除queue的首元素或priority_queue最高优先级元素|
+|q.front()|返回首元素|
+|q.back()|返回尾元素，只适用于queue|
+|q.top()|返回最高优先级元素，只适用于priority_queue|
+|q.push(item)|在queue末尾或priority_queue适当位置创建一个元素|
+|q.emplace(args)|参数由args构造，效果同push|
