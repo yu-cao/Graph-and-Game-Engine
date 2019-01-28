@@ -147,5 +147,55 @@ lambda隐式捕获：可以通过在捕获列表中写一个&或者=的方式帮
 可变lambda：希望能改变一个被“值捕获”的变量的值，必须在参数列表首加上关键字`mutable`
 
 ```cpp
-
+void fcn1()
+{
+    size_t v1 = 42;
+    //auto f = [v1](){return ++v1;};//ERROR: Cannot assign to a variable captured by copy in a non-mutable lambda
+    auto f = [v1]()mutable{return ++v1;};
+    v1 = 0;
+    auto j = f();//j=43
+    
+    //或者是
+    size_t v2 = 42;
+    auto f2 = [&v2]{return ++v2;};
+    v2 = 0;
+    auto k = f2();//k=1
+}
 ```
+
+参数绑定：标准库函数：`bind`，定义在头文件`functional`中，接收一个可调用的对象，生成一个新的可调用对象“适应”原对象的参数列表。bind的参数：`auto newCallable = bind(callable,arg_list);`如果需要传入参数，就使用置位符`_n`，定义在`std::placeholders::_?`(?可以为1、2···)
+
+```cpp
+//统计长度小于等于6的单词数量的程序
+using std::placeholders::_1;
+
+bool check_size(const string &s, string::size_type sz)
+{
+	return s.size() >= sz;
+}
+
+void biggies(vector<string> &words, vector<string>::size_type sz)
+{
+	//bind中的第二个参数_1就是作为第一个参数传入check_size函数，第三个参数sz作为第二个参数传入check_size中
+	auto bc = count_if(words.begin(),words.end(),bind(check_size,_1,sz));
+	cout << bc;
+}
+
+//bind重排参数顺序
+bool isShorter(const string &s1, const string &s2)
+{
+	return s1.size() < s2.size();
+}
+sort(words.begin(),words.end(),bind(isShorter,_1,_2);//调用isShorter(A,B)，交换_1和_2可以执行isShorter(B,A)
+
+//绑定引用参数
+for_each(words.begin(),words.end(),bind(print,os,_1,' ');//ERROR:不能拷贝os
+for_each(words.begin(),words.end(),bind(print,ref(os),_1,' ');//标准库ref函数：传递给bind一个对象但不拷贝它
+```
+
+迭代器(Addition)：
+
++ 插入迭代器
++ 流迭代器
++ 反向迭代器
++ 移动迭代器
