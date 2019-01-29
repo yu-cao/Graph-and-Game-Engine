@@ -89,7 +89,6 @@ cout << f() << endl;
 
 lambda不能有默认参数，lambda调用的形参与实参数量必须始终相等，类型必须匹配。lambda可以直接使用局部static变量和在它所在函数之外声明的名字。
 
-
 ```cpp
 void biggies(vector<string> &words,vector<string>::size_type sz)
 {
@@ -171,20 +170,20 @@ using std::placeholders::_1;
 
 bool check_size(const string &s, string::size_type sz)
 {
-	return s.size() >= sz;
+    return s.size() >= sz;
 }
 
 void biggies(vector<string> &words, vector<string>::size_type sz)
 {
-	//bind中的第二个参数_1就是作为第一个参数传入check_size函数，第三个参数sz作为第二个参数传入check_size中
-	auto bc = count_if(words.begin(),words.end(),bind(check_size,_1,sz));
-	cout << bc;
+    //bind中的第二个参数_1就是作为第一个参数传入check_size函数，第三个参数sz作为第二个参数传入check_size中
+    auto bc = count_if(words.begin(),words.end(),bind(check_size,_1,sz));
+    cout << bc;
 }
 
 //bind重排参数顺序
 bool isShorter(const string &s1, const string &s2)
 {
-	return s1.size() < s2.size();
+    return s1.size() < s2.size();
 }
 sort(words.begin(),words.end(),bind(isShorter,_1,_2);//调用isShorter(A,B)，交换_1和_2可以执行isShorter(B,A)
 
@@ -195,7 +194,58 @@ for_each(words.begin(),words.end(),bind(print,ref(os),_1,' ');//标准库ref函�
 
 迭代器(Addition)：
 
-+ 插入迭代器
++ 插入迭代器（只有在容器支持`push_back`或者`push_front`时候才能用各自配套的迭代器）
+	+ `back_inserter`：创建一个使用`push_back`的迭代器
+	+ `front_inserter`：创建一个使用`push_front`的迭代器
+	+ `inserter`：创建一个使用`insert`的迭代器，接收第二个参数，必须指向给定容器的迭代器，插入后it还是指向它原来的元素（也即调用`inserter(c,iter)`时得到一个迭代器，接下来使用时会把元素插入到`iter`原来所指向的元素之前的位置：`it = c.insert(it,val); ++it;//使它指向原来元素`）
+
+	例如，使用`unique_copy`拷贝不重复的元素的目的位置，将vector中不重复元素拷贝到一个初始为空的list中:`unique_copy(vec.begin(),vec.end(),back_inserter(lst));`
+	
 + 流迭代器
-+ 反向迭代器
+	+ `istream_iterator`：允许懒惰求值，绑定到一个流之后不一定马上从流中读取，直到使用迭代器才真正读取。
+
+	|istream\_iterator操作|含义|
+	|:-:|:-:|
+	|istream\_iterator<T> in(is);|in从输入流is读取类型为T的值|
+	|istream\_iterator<T> end;|读取类型为T的值的istream\_iterator迭代器，表示尾后位置|
+	|in1 == in2 或 !=|in1与in2必须类型相同，如果绑定到相同的输入或都是尾后迭代器，则相等|
+	|*in|返回从流中读取的值|
+	|in++ 或 ++in|使用元素类型所定义的>>运算符从输入流中读取下一个值，返回的值是否是递增过的参考++前置还是后置|	
+	
+	```cpp
+	//计算从标准输入读取的值的累加值：
+	istream_iterator<int> in(cin), eof;
+	cout << accumulate(in, eof, 0) << endl;
+	
+	//从标准输入构造一个容器
+	istream_iterator<int> in_iter(cin), eof;
+	//方法1：
+	vector<int> vec;
+	while(in_iter != eof)
+	    vec.push_back(*in_iter++);
+	//方法2：
+	vector<int> vec(in_iter, eof);//通过范围构造
+	```
+	
+	+ `ostream_iterator`：可以对任何具有<<运算符的类型定义ostream\_iterator，可以选择第二个参数，在每个输出元素后都会打印这个字符串（C风格）
+
+	|ostream\_iterator操作|含义|
+	|:-:|:-:|
+	|ostream\_iterator<T> out(os);|out将类型为T的值写到输出流os中|
+	|ostream\_iterator<T> out(os,d);|out将类型为T的值写到输出流os中，每个值后面都跟一个d。d指向一个空字符结尾的字符数组|
+	|out = val|用<<运算符把val写入到out绑定的ostream中。类型必须兼容|
+	|out++,*out,++out|不对out做任何事情，都返回out|
+	
+	```cpp
+	//输出vec，每个元素后面加一个空格
+    ostream_iterator<int> out_iter(cout, " ");
+    //方法1：
+    for (auto e : vec)
+        *out_iter++ = e;//也可以等价写成out_iter = e;但是可读性下降了，不建议
+    //方法2：
+    copy(vec.begin(),vec.end(),out_iter);
+    cout << endl;
+	```
+		
++ 反向迭代器：带r，跟普通迭代器类似，略。
 + 移动迭代器
