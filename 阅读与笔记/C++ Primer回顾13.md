@@ -127,7 +127,7 @@ BlobPtr<T> BlobPtr<T>::operator++(int)
 
 <hr>
 
-类模板与友元：
+<h3>类模板与友元：</h3>
 
 一对一友好：
 
@@ -180,7 +180,7 @@ template <typename Type> class Bar{
 
 <hr>
 
-模板类型别名
+<h3>模板类型别名</h3>
 
 可以通过定义`typedef`来引用已经实例化的类（必须是已经实例化的，不能定义`typedef`引用一个模板，因为模板不是一个类型）；**C++11**：使用`using`允许我们为类模板定义一个别名
 
@@ -193,7 +193,7 @@ twin<string> authors;//authors是一个pair<string, string>类型
 
 <hr>
 
-模板参数
+<h3>模板参数</h3>
 
 模板参数会隐藏外层作用域中声明的相同名字，一个特定文件所需要的所有模板声明一起放在文件开始处，出现于任何使用这些模板的代码之前
 
@@ -254,7 +254,7 @@ Numbers<> average_precision;//空的<>表示我们希望使用默认类型
 
 <hr>
 
-成员模板
+<h3>成员模板</h3>
 
 普通类的成员模板
 
@@ -290,7 +290,7 @@ template <typename It>
 
 <hr>
 
-控制实例化
+<h3>控制实例化</h3>
 
 **C++11**：显式实例化，避免多个文件中实例化相同模板引发的额外开销；实例化定义会实例化所有成员，所以所用类型必须能用于模板的所有成员函数
 
@@ -311,7 +311,7 @@ int i = compare(a1[0], a2[0]);//实例化会出现在其他位置
 
 <hr>
 
-模板实参推断
+<h3>模板实参推断</h3>
 
 从函数实参来确定模板实参的过程；如果函数的形参的类型使用了模板类型参数，则只允许两种转换：
 
@@ -413,7 +413,9 @@ auto sum(T1 a, T2 b) -> decltype(a + b)
 
 <hr>
 
-引用折叠：只能应用于间接创建的引用的引用，如类型别名或模板参数
+<h3>引用折叠</h3>
+
+只能应用于间接创建的引用的引用，如类型别名或模板参数
 
 ```cpp
 template <typename T> void f3(T&&);
@@ -486,3 +488,256 @@ void flip(F f, T1 &&t1, T2 &&t2)
 <hr>
 
 重载与模板
+
+函数模板可以被另一个模板或一个普通非模板函数重载，名字相同的函数必须具有不同数量和类型的参数
+
+```cpp
+//打印任何我们不能处理的类型
+template<typename T>
+string debug_rep(const T &t)//函数1
+{
+    ostringstream ret;
+    ret << t;
+    return ret.str();
+}
+
+template<typename T>
+string debug_rep(T *p)//函数2
+{
+    ostringstream ret;
+    ret << "pointer: " << p;
+    if (p)
+        ret << " " << debug_rep(*p);
+    else
+        ret << " null pointer";
+    return ret.str();
+}
+```
+
+当有多个重载模板对一个调用提供同样好的匹配时，应选择最特例化的版本（优先级：`普通非模板函数 > 特例化高的模板函数 > 特例化低的模板函数`）
+
+```cpp
+string s("hi");
+cout << debug_rep(s) << endl;//只能匹配1
+cout << debug_rep(&s) << endl;//两个函数都可以，函数1的参数：const string*&，函数2的参数：string*（第二个精确匹配）
+
+const string *sp = &s;//多了一个const
+cout << debug_rep(sp) << endl;//1：const string*& 2：const string *，两个都是精确匹配
+//这里被解析成函数2（没有二义性），因为函数2更特例化，函数1可以用于任何类型，函数2只能用于指针类型
+
+string debug_rep(const string &s)//函数3，普通非模板函数
+{
+    return '"' + s + '"';
+}
+cout << debug_rep(s) << endl;//函数1的模板为debug_rep<string>(const string&)，函数3也能匹配，使用函数3（函数3特例化最高）
+
+cout << debug_rep("hi") << endl;//C风格字符串
+//函数1：const T&，T绑定到char[3]
+//函数2：T*，T绑定到const char（数组到指针的转化是许可的，所以是最特例化的，调用此函数）
+//函数3：要进行一次const char*到string的转化（转化可行但是需要进行一次用户定义的转化，匹配度不如函数2）
+```
+
+另外注意：缺少函数声明会很可能会导致程序调用错误的模板函数进行实例化，而不是调用我们希望的非模板函数的情况，**最好在定义任何函数前，记得声明所有重载的函数版本**
+
+<hr>
+
+<h3>可变参数模板</h3>
+
+**C++11**：接受一个【可变数目参数】（也称为【参数包】）的模板函数或模板类。
+
+```cpp
+template <typename T, typename ... Args>
+void foo(const T &t, const Args& ... rest);
+
+int i = 0;
+double d = 3.14;
+string s = "how now brown cow";
+foo(i, s, 42, d);//包中有3个参数(const int&, const string&, const int&, const double&);
+foo(s, 42, "hi");//包中有2个参数(const string&, const int&, const char[3]&);
+foo(d, s);//包中有1个参数(const double&, const string&);
+foo("hi");//空包(const char[3]&);
+```
+
+当我们想知道包中有多少元素时，可以使用`sizeof...`运算符
+
+```cpp
+template <typename ... Args> void g(Args ... args)
+{
+    cout << sizeof...(Args) << endl;
+    cout << sizeof...(args) << endl;
+}
+```
+
+编写可变参数函数模板：通常是**递归设计**的，第一步处理包中的第一个实参，然后用剩余实参调用自身
+
+```cpp
+template<typename T>
+ostream &print(ostream &os, const T &t)//仅剩1个实参的时候，终结下面的循环调用
+{
+    return os << t;
+}
+
+template<typename T, typename ... Args>
+ostream &print(ostream &os, const T &t, const Args &... rest)
+{
+    os << t << ", ";//打印第一个实参
+    return print(os, rest...);//递归调用打印其他实参
+}
+```
+
+此外可以对包进行拓展，需要提供用于每个拓展元素的模式；
+
+拓展：把它分解为构成的元素，对于每个元素应用模式，获得拓展后的列表；在模式右边放`...`来触发拓展操作
+
+转发参数包：自己重写`emplace_back`实现完美转发
+
+```cpp
+class StrVec
+{
+public:
+    template<typename ... Args>
+    void emplace_back(Args &&... args)//每个函数参数都是指向其对应实参的右值引用
+    {
+        chk_n_alloc();//如果需要重新分配StrVec的内存空间
+        alloc.construct(first_free++, std::forward(Args)(args)...);
+    }
+};
+```
+
+`forward`保证了实参的原始类型，用`construct`在`first_free`指向位置处创建一个元素，`...`实现了参数包拓展（既拓展了模板参数包`Args`，也拓展了函数参数包`args`），形成`std::forward<Ti>(ti)`
+
+```cpp
+svec.emplace_back(10,'c');//将cccccccccc添加为新的尾元素
+
+//会拓展出：
+std::forward<int>(10),std::forward<char>(c)
+```
+
+这样能够保证转发的完美性，总的来说，可变参数函数通常将它们的参数转发给其他函数，由于`fun`的参数是右值引用，所以我们可以传递给它任何类型的实参，然后通过`forward`，它们的所有类型信息在调用`work`时得到保持
+
+```cpp
+template<typename ... Args>
+void fun(Args &&... args)//将Args拓展为一个右值引用列表
+{
+    //work的实参既拓展Args又拓展args
+    work(std::forward<Args>(args)...);
+}
+```
+
+<hr>
+
+<h3>模板特例化</h3>
+
+模板的一个独立的定义，在其中一个或多个模板参数被指定为特定的类型；**本质：为原模板的一个特殊实例提供了定义**
+
+在特例化一个模板时，必须为原来模板的每个模板参数提供实参，使用`template <>`空的尖括号对指出；
+
+**我们必须为原模板的所有模板参数提供实参，即我们不能部分特例化函数模板，但是对于类模板，可以部分特例化**
+
+```cpp
+template <size_t N, size_t M>
+int compare(const char (&)[N], const char (&)[M]);//函数1
+//特例化以下模板
+template <typename T> int compare(const T&, const T&);//函数2
+
+//处理字符数组的指针的特例化
+template <>
+int compare(const char* const &p1, const char* const &p2)
+{
+    return strcmp(p1, p2);
+}
+
+//注意与上面特例化的区别，这里是普通非模板函数
+int compare(const char* const &p1, const char* const &p2)//函数3
+{
+    return strcmp(p1, p2);
+}
+
+//以下比较函数1&2（参数是C风格字符串字面常量，应该是const char[]类型）
+compare("hi", "mom");//1&2都可以，而且提供同样好的匹配，但是函数1只接受字符数组，更加实例化，选1
+//我们定义的特例化是针对字符数组的指针的，这里不是指针，所以不会引发
+
+//以下比较函数1&2&3，同样的参数
+compare("hi", "mom");//1&2&3都是同样好的匹配，但是如果非模板与模板同样好时，选择非模板，选3
+```
+
+本质上，一个特例化的版本本质上是一个实例化的模板，而不是一个重载版本，所以不会影响函数匹配（等于我们部分接管了编译器的工作）
+
+**模板及其特例化版本应该声明在同一个头文件中。所有同名模板的声明在前，这些模板的特例化版本在后。顺序非常重要！！否则会由原模板实例化生成代码，难以追踪这样的bug**
+
+类模板特例化
+
+必须要在原模板定义所在的命名空间中特例化它，下面例子展示全特例化`std::hash`类
+
+```cpp
+namespace std{//打开命名空间
+template <>
+struct hash<Sales_data>
+{
+    //散列无序容器要定义以下类型
+    typedef size_t result_type;
+    typedef Sales_data argument_type;
+    size_t operator()(const Sales_data& s) const;
+    //使用合成的拷贝控制成员和默认构造函数
+};
+
+//调用运算符为给定类型的值定义一个hash函数，三个从标准库生成得到的hash值进行异或
+size_t hash<Sales_data>::operator()(const Sales_data& s) const{
+    return hash<string>()(s.bookNo) ^
+           hash<unsigned>()(s.units_sold) ^
+           hash<double>()(s.revenue);//hash<string>这种是通过标准库来生成hash值
+}
+}//关闭命名空间（注意：没有分号）
+```
+
+由于其使用了`Sales_data`的私有成员，所以必须是`Sales_data`的友元类，而且为了让`Sales_data`用户能使用`hash`的特例化版本，应该在`Sales_data`的头文件中定义这个特例化版本：
+
+```cpp
+template <typename T> class std::hash;//友元声明必须
+class Sales_data{
+    friend class std::hash<Sales_data>;
+};
+
+//当将Sales_data作为容器关键字类型时，编译器自动调用这个特例化版本
+unordered_multiset<Sales_data> SData;
+```
+
+部分特例化
+
+例子：标准库中的`remove_reference`类型，通过一系列特例化模板完成其功能
+
+```cpp
+template<typename T>
+struct remove_reference
+{
+    typedef T type;
+};
+
+template<typename T>
+struct remove_reference<T &>
+{
+    typedef T type;
+};
+
+template<typename T>
+struct remove_reference<T &&>
+{
+    typedef T type;
+};
+```
+
+但是特例化可以只特例化成员而不是类，下面的代码，如果使用`int`以外的类型使用`Foo`，成员与往常一样进行实例化，用`int`使用`Foo`时，Bar以外成员与往常一样进行实例化，使用`Bar`时，会使用我们定义的特例化版本
+
+```cpp
+template <typename T> struct Foo{
+    Foo(const T &t = T()) : mem(t){ }
+    void Bar() {/* */}
+    T mem;
+    //...
+}
+template <>
+void Foo<int>::Bar()//特例化Foo<int>的成员Bar
+{
+    //...
+}
+```
